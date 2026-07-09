@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ma Cave</title>
+<style>
+  :root {
+    --bg: #f6f2ec;
+    --panel: #ffffff;
+    --ink: #2b241d;
+    --ink-soft: #6b6055;
+    --line: #e4dbcd;
+    --rouge: #7a2733;
+    --rouge-bg: #f7e9ea;
+    --blanc: #a68a2e;
+    --blanc-bg: #faf3df;
+    --rose: #b4576e;
+    --rose-bg: #fbeaef;
+    --effer: #2f6e5c;
+    --effer-bg: #e7f2ec;
+    --accent: #4a3a2c;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    padding-bottom: 100px;
+  }
+  header {
+    padding: 22px 18px 16px;
+    background: var(--accent);
+    color: #f6f2ec;
+  }
+  header h1 {
+    margin: 0 0 2px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+  header p {
+    margin: 0;
+    font-size: 0.85rem;
+    opacity: 0.75;
+  }
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    padding: 14px 16px 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  select, input, textarea {
+    font-family: inherit;
+    font-size: 0.95rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .toolbar select {
+    flex: 1;
+    min-width: 120px;
+  }
+  .toolbar label.check {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .section-title {
+    margin: 18px 16px 6px;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title .count {
+    background: var(--line);
+    color: var(--ink-soft);
+    border-radius: 20px;
+    padding: 1px 8px;
+    font-size: 0.72rem;
+  }
+  .cards { padding: 0 12px; display: flex; flex-direction: column; gap: 10px; }
+  .card {
+    background: var(--panel);
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    padding: 14px 14px 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card.epuisee { opacity: 0.55; }
+  .card::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 5px;
+  }
+  .card.Rouge::before { background: var(--rouge); }
+  .card.Blanc::before { background: var(--blanc); }
+  .card.Rosé::before { background: var(--rose); }
+  .card.Effervescent::before { background: var(--effer); }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .card-name { font-size: 1.05rem; font-weight: 700; margin: 0 0 2px; }
+  .card-sub { font-size: 0.82rem; color: var(--ink-soft); margin: 0; }
+  .pill {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .pill.Rouge { background: var(--rouge-bg); color: var(--rouge); }
+  .pill.Blanc { background: var(--blanc-bg); color: var(--blanc); }
+  .pill.Rosé { background: var(--rose-bg); color: var(--rose); }
+  .pill.Effervescent { background: var(--effer-bg); color: var(--effer); }
+  .pill.epuise { background: #eee; color: #888; }
+  .card-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 14px;
+    margin-top: 10px;
+    font-size: 0.83rem;
+  }
+  .card-details div span.label { color: var(--ink-soft); display: block; font-size: 0.72rem; }
+  .card-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .btn {
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-ghost { background: #fff; border: 1px solid var(--line); color: var(--ink); }
+  .btn-danger { background: #fff; border: 1px solid #e2b8ba; color: var(--rouge); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .history { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 8px; }
+  .history-item { font-size: 0.8rem; margin-bottom: 5px; }
+  .history-item .date { color: var(--ink-soft); font-weight: 600; margin-right: 6px; }
+  .history-toggle { font-size: 0.75rem; color: var(--accent); cursor: pointer; text-decoration: underline; margin-top: 8px; display: inline-block; }
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--ink-soft);
+  }
+  .fab {
+    position: fixed;
+    bottom: 20px; right: 20px;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 1.8rem;
+    border: none;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    cursor: pointer;
+    line-height: 1;
+  }
+  .backup-row {
+    display: flex;
+    gap: 8px;
+    padding: 4px 16px 0;
+  }
+  .backup-row button {
+    flex: 1;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 7px;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+  }
+  /* Modal */
+  .overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(43,36,29,0.45);
+    z-index: 50;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: #fff;
+    width: 100%;
+    max-width: 480px;
+    border-radius: 16px 16px 0 0;
+    padding: 20px 18px 24px;
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+  .modal h2 { margin: 0 0 14px; font-size: 1.2rem; }
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 0.78rem; color: var(--ink-soft); margin-bottom: 3px; }
+  .field input, .field select, .field textarea { width: 100%; }
+  .field-row { display: flex; gap: 8px; }
+  .field-row .field { flex: 1; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .modal-actions .btn { flex: 1; }
+  textarea { resize: vertical; min-height: 60px; }
+  .toast {
+    position: fixed;
+    bottom: 90px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #fff;
+    padding: 9px 16px; border-radius: 20px;
+    font-size: 0.82rem;
+    z-index: 60;
+    opacity: 0;
+    transition: opacity 0.25s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 14px 16px 0;
+  }
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    border-bottom: 2px solid var(--line);
+    padding: 10px 6px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom: 2px solid var(--accent);
+  }
+  .synthese-wrap { padding: 16px; }
+  .synthese-total {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .synthese-total .big { font-size: 1.6rem; font-weight: 700; }
+  .synthese-total .big-label { font-size: 0.75rem; color: var(--ink-soft); }
+  .region-row {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .region-row .region-name { font-weight: 700; font-size: 0.95rem; }
+  .region-row .region-count { font-size: 0.78rem; color: var(--ink-soft); }
+  .region-row .region-value { font-weight: 700; font-size: 1rem; text-align: right; }
+  .synthese-note {
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    margin-top: 4px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Ma Cave</h1>
+  <p id="subtitle">Chargement…</p>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tabListe">Mes bouteilles</button>
+  <button class="tab-btn" id="tabSynthese">Synthèse</button>
+</div>
+
+<div class="toolbar" id="toolbarFiltres">
+  <select id="filterCouleur">
+    <option value="">Toutes les couleurs</option>
+    <option value="Rouge">Rouge</option>
+    <option value="Blanc">Blanc</option>
+    <option value="Rosé">Rosé</option>
+    <option value="Effervescent">Effervescent</option>
+  </select>
+  <label class="check">
+    <input type="checkbox" id="showEpuisees">
+    Voir les épuisées
+  </label>
+</div>
+
+<div class="backup-row">
+  <button id="btnExport">⭳ Exporter une sauvegarde</button>
+  <button id="btnImport">⭱ Importer une sauvegarde</button>
+</div>
+
+<div id="content"></div>
+
+<button class="fab" id="btnAdd">+</button>
+
+<input type="file" id="fileInput" accept="application/json" style="display:none">
+
+<div class="toast" id="toast"></div>
+
+<!-- Modal fiche vin -->
+<div class="overlay" id="overlayWine">
+  <div class="modal">
+    <h2 id="wineModalTitle">Ajouter un vin</h2>
+    <div class="field">
+      <label>Nom / cuvée</label>
+      <input type="text" id="fNom" placeholder="ex : Pommard 2019">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Couleur</label>
+        <select id="fCouleur">
+          <option value="Rouge">Rouge</option>
+          <option value="Blanc">Blanc</option>
+          <option value="Rosé">Rosé</option>
+          <option value="Effervescent">Effervescent</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Millésime</label>
+        <input type="number" id="fMillesime" placeholder="2019">
+      </div>
+    </div>
+    <div class="field">
+      <label>Région d'origine</label>
+      <input type="text" id="fRegion" list="regionsList" placeholder="ex : Bourgogne">
+      <datalist id="regionsList">
+        <option value="Bourgogne">
+        <option value="Bordeaux">
+        <option value="Vallée du Rhône">
+        <option value="Val de Loire">
+        <option value="Alsace">
+        <option value="Provence">
+        <option value="Languedoc-Roussillon">
+        <option value="Champagne">
+        <option value="Jura">
+        <option value="Beaujolais">
+        <option value="Sud-Ouest">
+        <option value="Étranger">
+      </datalist>
+    </div>
+    <div class="field">
+      <label>Cépage</label>
+      <input type="text" id="fCepage" placeholder="ex : Pinot noir">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Offert par (vide si acheté)</label>
+        <input type="text" id="fOffert" placeholder="ex : Olivier">
+      </div>
+      <div class="field">
+        <label>Quantité en stock</label>
+        <input type="number" id="fQuantite" min="0" value="1">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Prix d'achat (€)</label>
+        <input type="number" id="fPrixAchat" step="0.01" placeholder="optionnel">
+      </div>
+      <div class="field">
+        <label>Prix du marché (€)</label>
+        <input type="number" id="fPrixMarche" step="0.01" placeholder="optionnel">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnCancelWine">Annuler</button>
+      <button class="btn btn-primary" id="btnSaveWine">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal dégustation -->
+<div class="overlay" id="overlayTasting">
+  <div class="modal">
+    <h2>Bouteille ouverte</h2>
+    <p style="font-size:0.85rem; color:var(--ink-soft); margin-top:-8px;" id="tastingWineName"></p>
+    <div class="field">
+      <label>Note de dégustation (facultatif)</label>
+      <textarea id="fTastingNote" placeholder="quelques mots…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnSkipTasting">Passer</button>
+      <button class="btn btn-primary" id="btnSaveTasting">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'ma-cave-vins-v2';
+let wines = [];
+let editingId = null;
+let tastingWineId = null;
+
+function uid() { return 'w' + Date.now() + Math.random().toString(36).slice(2,7); }
+
+function loadWines() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    wines = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error('Erreur de lecture', e);
+    wines = [];
+  }
+}
+
+function saveWines() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(wines));
+  } catch (e) {
+    console.error('Erreur de sauvegarde', e);
+    showToast('Erreur : sauvegarde impossible');
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+let currentView = 'liste';
+
+document.getElementById('tabListe').addEventListener('click', () => {
+  currentView = 'liste';
+  document.getElementById('tabListe').classList.add('active');
+  document.getElementById('tabSynthese').classList.remove('active');
+  document.getElementById('toolbarFiltres').style.display = 'flex';
+  render();
+});
+document.getElementById('tabSynthese').addEventListener('click', () => {
+  currentView = 'synthese';
+  document.getElementById('tabSynthese').classList.add('active');
+  document.getElementById('tabListe').classList.remove('active');
+  document.getElementById('toolbarFiltres').style.display = 'none';
+  render();
+});
+
+function valeurUnitaire(w) {
+  if (w.prixMarche) return w.prixMarche;
+  if (w.prixAchat) return w.prixAchat;
+  return 0;
+}
+
+function renderSynthese() {
+  const content = document.getElementById('content');
+  const enStock = wines.filter(w => w.quantite > 0);
+
+  if (enStock.length === 0) {
+    content.innerHTML = '<div class="empty">Aucune bouteille en stock à synthétiser.</div>';
+    return;
+  }
+
+  const parRegion = {};
+  let totalBouteilles = 0;
+  let totalValeur = 0;
+  let sansPrixCount = 0;
+
+  enStock.forEach(w => {
+    const region = w.region && w.region.trim() ? w.region.trim() : 'Région non précisée';
+    if (!parRegion[region]) parRegion[region] = { count: 0, valeur: 0 };
+    parRegion[region].count += w.quantite;
+    const vu = valeurUnitaire(w);
+    parRegion[region].valeur += vu * w.quantite;
+    totalBouteilles += w.quantite;
+    totalValeur += vu * w.quantite;
+    if (vu === 0) sansPrixCount += w.quantite;
+  });
+
+  const regionsTriees = Object.keys(parRegion).sort((a, b) => parRegion[b].valeur - parRegion[a].valeur);
+
+  let html = `
+    <div class="synthese-wrap">
+      <div class="synthese-total">
+        <div>
+          <div class="big-label">Bouteilles en stock</div>
+          <div class="big">${totalBouteilles}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="big-label">Valorisation estimée</div>
+          <div class="big">${totalValeur.toFixed(0)} €</div>
+        </div>
+      </div>
+  `;
+
+  regionsTriees.forEach(region => {
+    const r = parRegion[region];
+    html += `
+      <div class="region-row">
+        <div>
+          <div class="region-name">${escapeHtml(region)}</div>
+          <div class="region-count">${r.count} bouteille${r.count > 1 ? 's' : ''}</div>
+        </div>
+        <div class="region-value">${r.valeur.toFixed(0)} €</div>
+      </div>
+    `;
+  });
+
+  if (sansPrixCount > 0) {
+    html += `<p class="synthese-note">${sansPrixCount} bouteille${sansPrixCount > 1 ? 's' : ''} sans aucun prix renseigné, compté${sansPrixCount > 1 ? 'es' : 'e'} pour 0 € dans le total.</p>`;
+  }
+
+  html += '</div>';
+  content.innerHTML = html;
+}
+
+function render() {
+  if (currentView === 'synthese') {
+    document.getElementById('subtitle').textContent = 'Synthèse par région';
+    renderSynthese();
+    return;
+  }
+
+  const content = document.getElementById('content');
+  const filterCouleur = document.getElementById('filterCouleur').value;
+  const showEpuisees = document.getElementById('showEpuisees').checked;
+
+  let list = wines.filter(w => {
+    if (filterCouleur && w.couleur !== filterCouleur) return false;
+    if (!showEpuisees && w.quantite <= 0) return false;
+    return true;
+  });
+
+  document.getElementById('subtitle').textContent =
+    wines.length === 0 ? 'Aucun vin enregistré' :
+    `${wines.filter(w=>w.quantite>0).length} en stock · ${wines.filter(w=>w.quantite<=0).length} épuisée(s)`;
+
+  if (list.length === 0) {
+    content.innerHTML = '<div class="empty">Aucun vin à afficher.<br>Touche le bouton + pour ajouter ta première bouteille.</div>';
+    return;
+  }
+
+  const couleurs = ['Rouge','Blanc','Rosé','Effervescent'];
+  let html = '';
+  couleurs.forEach(c => {
+    let groupe = list.filter(w => w.couleur === c);
+    if (groupe.length === 0) return;
+    groupe.sort((a,b) => (a.region||'').localeCompare(b.region||'') || (a.nom||'').localeCompare(b.nom||''));
+    html += `<div class="section-title">${c} <span class="count">${groupe.length}</span></div><div class="cards">`;
+    groupe.forEach(w => { html += renderCard(w); });
+    html += '</div>';
+  });
+  content.innerHTML = html;
+
+  document.querySelectorAll('[data-action]').forEach(el => {
+    el.addEventListener('click', handleCardAction);
+  });
+  document.querySelectorAll('.history-toggle').forEach(el => {
+    el.addEventListener('click', () => {
+      const box = el.parentElement.querySelector('.history-box');
+      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+      el.textContent = box.style.display === 'none' ? `Voir l'historique (${el.dataset.count})` : 'Masquer l\'historique';
+    });
+  });
+}
+
+function renderCard(w) {
+  const epuisee = w.quantite <= 0;
+  const history = w.historique || [];
+  const historyHtml = history.length ? `
+    <span class="history-toggle" data-count="${history.length}">Voir l'historique (${history.length})</span>
+    <div class="history-box" style="display:none;">
+      ${history.slice().reverse().map(h => `
+        <div class="history-item"><span class="date">${formatDate(h.date)}</span>${h.note ? escapeHtml(h.note) : '<em style="color:var(--ink-soft)">sans note</em>'}</div>
+      `).join('')}
+    </div>` : '';
+
+  return `
+    <div class="card ${w.couleur} ${epuisee ? 'epuisee' : ''}">
+      <div class="card-top">
+        <div>
+          <p class="card-name">${escapeHtml(w.nom || 'Sans nom')}</p>
+          <p class="card-sub">${escapeHtml(w.region || 'Région non précisée')}${w.millesime ? ' · ' + w.millesime : ''}${w.cepage ? ' · ' + escapeHtml(w.cepage) : ''}</p>
+        </div>
+        <span class="pill ${epuisee ? 'epuise' : w.couleur}">${epuisee ? 'Épuisée' : 'En stock · ' + w.quantite}</span>
+      </div>
+      <div class="card-details">
+        ${w.offertPar ? `<div><span class="label">Offert par</span>${escapeHtml(w.offertPar)}</div>` : `<div><span class="label">Origine</span>Achetée</div>`}
+        ${w.prixAchat ? `<div><span class="label">Prix d'achat</span>${w.prixAchat} €</div>` : ''}
+        ${w.prixMarche ? `<div><span class="label">Prix du marché</span>${w.prixMarche} €</div>` : ''}
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-primary" data-action="open" data-id="${w.id}" ${epuisee ? 'disabled' : ''}>J'ai ouvert une bouteille</button>
+        <button class="btn btn-ghost" data-action="edit" data-id="${w.id}">Modifier</button>
+        <button class="btn btn-danger" data-action="delete" data-id="${w.id}">Supprimer</button>
+      </div>
+      ${historyHtml}
+    </div>
+  `;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function handleCardAction(e) {
+  const action = e.currentTarget.dataset.action;
+  const id = e.currentTarget.dataset.id;
+  const wine = wines.find(w => w.id === id);
+  if (!wine) return;
+
+  if (action === 'open') {
+    tastingWineId = id;
+    document.getElementById('tastingWineName').textContent = wine.nom;
+    document.getElementById('fTastingNote').value = '';
+    document.getElementById('overlayTasting').classList.add('open');
+  } else if (action === 'edit') {
+    openWineModal(wine);
+  } else if (action === 'delete') {
+    if (confirm(`Supprimer définitivement "${wine.nom}" ?`)) {
+      wines = wines.filter(w => w.id !== id);
+      saveWines();
+      render();
+      showToast('Vin supprimé');
+    }
+  }
+}
+
+function openWineModal(wine) {
+  editingId = wine ? wine.id : null;
+  document.getElementById('wineModalTitle').textContent = wine ? 'Modifier le vin' : 'Ajouter un vin';
+  document.getElementById('fNom').value = wine ? wine.nom : '';
+  document.getElementById('fCouleur').value = wine ? wine.couleur : 'Rouge';
+  document.getElementById('fMillesime').value = wine ? wine.millesime || '' : '';
+  document.getElementById('fRegion').value = wine ? wine.region || '' : '';
+  document.getElementById('fCepage').value = wine ? wine.cepage || '' : '';
+  document.getElementById('fOffert').value = wine ? wine.offertPar || '' : '';
+  document.getElementById('fQuantite').value = wine ? wine.quantite : 1;
+  document.getElementById('fPrixAchat').value = wine ? wine.prixAchat || '' : '';
+  document.getElementById('fPrixMarche').value = wine ? wine.prixMarche || '' : '';
+  document.getElementById('overlayWine').classList.add('open');
+}
+
+document.getElementById('btnAdd').addEventListener('click', () => openWineModal(null));
+document.getElementById('btnCancelWine').addEventListener('click', () => {
+  document.getElementById('overlayWine').classList.remove('open');
+});
+
+document.getElementById('btnSaveWine').addEventListener('click', () => {
+  const nom = document.getElementById('fNom').value.trim();
+  if (!nom) { showToast('Le nom du vin est obligatoire'); return; }
+
+  const data = {
+    nom,
+    couleur: document.getElementById('fCouleur').value,
+    millesime: document.getElementById('fMillesime').value ? parseInt(document.getElementById('fMillesime').value) : null,
+    region: document.getElementById('fRegion').value.trim(),
+    cepage: document.getElementById('fCepage').value.trim(),
+    offertPar: document.getElementById('fOffert').value.trim(),
+    quantite: Math.max(0, parseInt(document.getElementById('fQuantite').value) || 0),
+    prixAchat: document.getElementById('fPrixAchat').value ? parseFloat(document.getElementById('fPrixAchat').value) : null,
+    prixMarche: document.getElementById('fPrixMarche').value ? parseFloat(document.getElementById('fPrixMarche').value) : null,
+  };
+
+  if (editingId) {
+    const idx = wines.findIndex(w => w.id === editingId);
+    wines[idx] = { ...wines[idx], ...data };
+    showToast('Vin modifié');
+  } else {
+    wines.push({ id: uid(), historique: [], ...data });
+    showToast('Vin ajouté');
+  }
+  saveWines();
+  document.getElementById('overlayWine').classList.remove('open');
+  render();
+});
+
+document.getElementById('btnSaveTasting').addEventListener('click', () => finalizeTasting(true));
+document.getElementById('btnSkipTasting').addEventListener('click', () => finalizeTasting(false));
+
+function finalizeTasting(withNote) {
+  const wine = wines.find(w => w.id === tastingWineId);
+  if (!wine) return;
+  wine.quantite = Math.max(0, wine.quantite - 1);
+  wine.historique = wine.historique || [];
+  wine.historique.push({
+    date: new Date().toISOString(),
+    note: withNote ? document.getElementById('fTastingNote').value.trim() : ''
+  });
+  saveWines();
+  document.getElementById('overlayTasting').classList.remove('open');
+  render();
+  showToast('Bouteille enregistrée comme ouverte');
+}
+
+document.getElementById('filterCouleur').addEventListener('change', render);
+document.getElementById('showEpuisees').addEventListener('change', render);
+
+document.getElementById('btnExport').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(wines, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ma-cave-sauvegarde-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Sauvegarde exportée');
+});
+
+document.getElementById('btnImport').addEventListener('click', () => {
+  document.getElementById('fileInput').click();
+});
+
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (!Array.isArray(imported)) throw new Error('Format invalide');
+
+      if (wines.length === 0) {
+        wines = imported;
+      } else {
+        const fusionner = confirm(`Ajouter ces ${imported.length} bouteille(s) à votre cave actuelle ?\n\nOK = ajouter à l'existant\nAnnuler = voir d'autres options`);
+        if (fusionner) {
+          const idsExistants = new Set(wines.map(w => w.id));
+          imported.forEach(w => {
+            if (idsExistants.has(w.id)) {
+              wines.push({ ...w, id: uid() });
+            } else {
+              wines.push(w);
+            }
+          });
+        } else {
+          const remplacer = confirm('Remplacer entièrement la cave actuelle par cette sauvegarde ?\n\nOK = tout remplacer\nAnnuler = abandonner l\'import');
+          if (remplacer) {
+            wines = imported;
+          } else {
+            showToast('Import annulé');
+            return;
+          }
+        }
+      }
+      saveWines();
+      render();
+      showToast('Sauvegarde importée');
+    } catch (err) {
+      showToast('Fichier de sauvegarde illisible');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+// Init
+loadWines();
+if (wines.length === 0) {
+  wines.push({
+    id: uid(),
+    nom: 'Pommard 2019',
+    couleur: 'Rouge',
+    millesime: 2019,
+    region: 'Bourgogne',
+    cepage: 'Pinot noir',
+    offertPar: 'Olivier',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: 40,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Nicolas Feuillatte - Grande Réserve Brut',
+    couleur: 'Effervescent',
+    millesime: null,
+    region: 'Champagne',
+    cepage: 'Meunier, Pinot Noir, Chardonnay',
+    offertPar: 'Thierry',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Coteaux Varois en Provence',
+    couleur: 'Rosé',
+    millesime: 2025,
+    region: 'Provence',
+    cepage: '',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Alain Depoivre - Brut Rosé',
+    couleur: 'Effervescent',
+    millesime: null,
+    region: 'Champagne',
+    cepage: '',
+    offertPar: '',
+    quantite: 6,
+    prixAchat: 19,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Domaine Clo Point - Le Clos',
+    couleur: 'Blanc',
+    millesime: 2021,
+    region: 'Bourgogne (Mâcon-Lugny / La Vineuse-sur-Frégande)',
+    cepage: 'Chardonnay',
+    offertPar: 'Patrick et Christelle Point',
+    quantite: 3,
+    prixAchat: 13,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'La Romance',
+    couleur: 'Blanc',
+    millesime: null,
+    region: 'Côtes du Rhône',
+    cepage: '',
+    offertPar: 'Elsa et Damien',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Domaine Serre Romani - Né sous la bonne étoile',
+    couleur: 'Rouge',
+    millesime: 2019,
+    region: 'Roussillon',
+    cepage: 'Syrah, Mourvèdre, Grenache Noir',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'M. Chapoutier - Les Pentues',
+    couleur: 'Rouge',
+    millesime: 2024,
+    region: 'Côtes du Rhône',
+    cepage: '',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Domaine Duclot - Élégance',
+    couleur: 'Rouge',
+    millesime: 2022,
+    region: 'Rhône (Saint-Joseph)',
+    cepage: '',
+    offertPar: '',
+    quantite: 2,
+    prixAchat: 15,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Crozes-Hermitage',
+    couleur: 'Rouge',
+    millesime: 2024,
+    region: 'Rhône (Crozes-Hermitage)',
+    cepage: '',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Domaine Machard de Gramont - Pommard 1er Cru "Clos Blanc"',
+    couleur: 'Rouge',
+    millesime: 2020,
+    region: 'Bourgogne',
+    cepage: 'Pinot Noir',
+    offertPar: 'Olivier',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Terre Métissée',
+    couleur: 'Rouge',
+    millesime: 2023,
+    region: 'Sud-Ouest',
+    cepage: 'Malbec, Syrah, Braucol, Grenache, Négrette, Carignan, Mourvèdre',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Château Belle-Garde (Vignobles Éric Duffau, Génissac)',
+    couleur: 'Rouge',
+    millesime: 2018,
+    region: 'Bordeaux (Entre-deux-Mers)',
+    cepage: '',
+    offertPar: '',
+    quantite: 5,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'André Ecklé et Fils - Edelzwicker',
+    couleur: 'Blanc',
+    millesime: 2024,
+    region: 'Alsace',
+    cepage: 'Assemblage (Edelzwicker)',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: 8,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Nuiton-Beaunoy - Hautes-Côtes de Beaune (magnum)',
+    couleur: 'Rouge',
+    millesime: 2022,
+    region: 'Bourgogne',
+    cepage: 'Pinot Noir',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Domaine de Suremain - Mercurey 1er Cru "La Bondue"',
+    couleur: 'Rouge',
+    millesime: 2019,
+    region: 'Bourgogne (Côte Chalonnaise)',
+    cepage: 'Pinot Noir',
+    offertPar: 'Ludo',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Signatures du Sud - Plaisir de Gris (magnum)',
+    couleur: 'Rosé',
+    millesime: 2024,
+    region: 'Languedoc (Pays d\'Oc)',
+    cepage: 'Cinsault, Grenache, Syrah',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Château Blanzac',
+    couleur: 'Rouge',
+    millesime: 2018,
+    region: 'Bordeaux (Castillon Côtes de Bordeaux)',
+    cepage: 'Merlot 75%, Cabernet Franc 25%',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: 12,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Baron de Lestac',
+    couleur: 'Rouge',
+    millesime: 2020,
+    region: 'Bordeaux',
+    cepage: 'Merlot, Cabernet Sauvignon, Cabernet Franc',
+    offertPar: 'Laurent et Anaïs',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Roussette de Savoie',
+    couleur: 'Blanc',
+    millesime: null,
+    region: 'Savoie',
+    cepage: '',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Alain Depoivre - Brut Tradition',
+    couleur: 'Effervescent',
+    millesime: null,
+    region: 'Champagne',
+    cepage: '',
+    offertPar: '',
+    quantite: 3,
+    prixAchat: 16,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Château La Croix Caperot',
+    couleur: 'Rouge',
+    millesime: 2019,
+    region: 'Bordeaux (Saint-Émilion Grand Cru)',
+    cepage: 'Merlot 75%, Cabernet Franc 20%, Cabernet Sauvignon 5%',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Prestige des Sacres - Cuvée Dynastie Blanc de Blancs',
+    couleur: 'Effervescent',
+    millesime: null,
+    region: 'Champagne',
+    cepage: 'Chardonnay',
+    offertPar: '',
+    quantite: 10,
+    prixAchat: 30,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Maison Stéphane Brocard - Marsannay "Vieilles Vignes"',
+    couleur: 'Rouge',
+    millesime: 2018,
+    region: 'Bourgogne (Côte d\'Or)',
+    cepage: 'Pinot Noir',
+    offertPar: '',
+    quantite: 2,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Chatus - Monnaie d\'Or',
+    couleur: 'Rouge',
+    millesime: 2021,
+    region: 'Ardèche',
+    cepage: 'Chatus (100%)',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'M. Chapoutier - La Ciboise',
+    couleur: 'Blanc',
+    millesime: 2024,
+    region: 'Luberon',
+    cepage: 'Grenache Blanc, Roussanne, Vermentino',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: 7.5,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Domaine Laurent Combier - Crozes-Hermitage',
+    couleur: 'Rouge',
+    millesime: 2024,
+    region: 'Rhône (Crozes-Hermitage)',
+    cepage: 'Syrah (100%)',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Domaine du Grand Montmirail - Vacqueyras',
+    couleur: 'Rouge',
+    millesime: 2016,
+    region: 'Rhône (Vacqueyras)',
+    cepage: 'Grenache 65%, Syrah 35%',
+    offertPar: 'Elsa et Damien (cadeau de mariage)',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Saint-Émilion Grand Cru',
+    couleur: 'Rouge',
+    millesime: 2019,
+    region: 'Bordeaux (Saint-Émilion Grand Cru)',
+    cepage: '',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Saint-Émilion Grand Cru (2018)',
+    couleur: 'Rouge',
+    millesime: 2018,
+    region: 'Bordeaux (Saint-Émilion Grand Cru)',
+    cepage: '',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Château Yon Lavallade',
+    couleur: 'Rouge',
+    millesime: 2019,
+    region: 'Bordeaux (Saint-Émilion Grand Cru)',
+    cepage: 'Merlot, Cabernet Franc, Cabernet Sauvignon',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Château Moulin Bellegrave (Antoine Mabileau)',
+    couleur: 'Rouge',
+    millesime: 2019,
+    region: 'Bordeaux (Saint-Émilion Grand Cru)',
+    cepage: 'Merlot (majoritaire)',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Cave de Lablachère - Saveur d\'Automne (Viognier doux)',
+    couleur: 'Blanc',
+    millesime: null,
+    region: 'Ardèche',
+    cepage: 'Viognier (100%)',
+    offertPar: '',
+    quantite: 2,
+    prixAchat: 12,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Domaine Clo Point - Intense Pinot',
+    couleur: 'Rouge',
+    millesime: 2019,
+    region: 'Bourgogne (Mâcon-Lugny / La Vineuse-sur-Frégande)',
+    cepage: 'Pinot Noir',
+    offertPar: '',
+    quantite: 6,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Domaine Clo Point - Entre et Charme',
+    couleur: 'Rouge',
+    millesime: 2019,
+    region: 'Bourgogne (Mâcon-Lugny)',
+    cepage: '',
+    offertPar: '',
+    quantite: 2,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Domaine Clo Point - Intense Pinot (2020)',
+    couleur: 'Rouge',
+    millesime: 2020,
+    region: 'Bourgogne (Mâcon-Lugny / La Vineuse-sur-Frégande)',
+    cepage: 'Pinot Noir',
+    offertPar: '',
+    quantite: 4,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Paul Jaboulet Aîné - Crozes-Hermitage',
+    couleur: 'Rouge',
+    millesime: 2019,
+    region: 'Rhône (Crozes-Hermitage)',
+    cepage: 'Syrah',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Domaine Clo Point - Volupté Entre et Charme',
+    couleur: 'Blanc',
+    millesime: null,
+    region: 'Bourgogne (Mâcon-Lugny)',
+    cepage: '',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Côte-Rôtie (sans étiquette)',
+    couleur: 'Rouge',
+    millesime: null,
+    region: 'Rhône (Côte-Rôtie)',
+    cepage: '',
+    offertPar: 'Achetée avec Damien',
+    quantite: 2,
+    prixAchat: 10,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Vin rouge non identifié (sans étiquette)',
+    couleur: 'Rouge',
+    millesime: null,
+    region: '',
+    cepage: '',
+    offertPar: '',
+    quantite: 2,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Domaine Monge Granon - Clos de Beylière',
+    couleur: 'Rouge',
+    millesime: null,
+    region: 'Drôme (Châtillon-en-Diois)',
+    cepage: 'Gamay, Pinot Noir, Syrah',
+    offertPar: '',
+    quantite: 4,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Château Monluc - Aubaine de Goupil',
+    couleur: 'Blanc',
+    millesime: 2021,
+    region: 'Sud-Ouest (Côtes de Gascogne)',
+    cepage: '',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Domaine du Pavillon - Crozes-Hermitage',
+    couleur: 'Rouge',
+    millesime: 2017,
+    region: 'Rhône (Crozes-Hermitage)',
+    cepage: 'Syrah',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Domaine Duclot - Viognier (à confirmer)',
+    couleur: 'Blanc',
+    millesime: 2022,
+    region: 'Rhône (Ardoix)',
+    cepage: 'Viognier',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Gewurztraminer',
+    couleur: 'Blanc',
+    millesime: 2016,
+    region: 'Alsace',
+    cepage: 'Gewurztraminer',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Crozes-Hermitage blanc',
+    couleur: 'Blanc',
+    millesime: 2024,
+    region: 'Rhône (Crozes-Hermitage)',
+    cepage: '',
+    offertPar: '',
+    quantite: 3,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Saint-Joseph (sans étiquette)',
+    couleur: 'Rouge',
+    millesime: null,
+    region: 'Rhône (Saint-Joseph)',
+    cepage: '',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Châteauneuf-du-Pape (sans étiquette)',
+    couleur: 'Rouge',
+    millesime: null,
+    region: 'Rhône (Châteauneuf-du-Pape)',
+    cepage: '',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  wines.push({
+    id: uid(),
+    nom: 'Les Vignes de Féchy - Chardonnay Vieilles Vignes',
+    couleur: 'Blanc',
+    millesime: null,
+    region: 'Savoie',
+    cepage: 'Chardonnay',
+    offertPar: '',
+    quantite: 1,
+    prixAchat: null,
+    prixMarche: null,
+    historique: []
+  });
+  saveWines();
+}
+render();
+</script>
+</body>
+</html>
