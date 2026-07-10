@@ -316,6 +316,9 @@
     <option value="Rosé">Rosé</option>
     <option value="Effervescent">Effervescent</option>
   </select>
+  <select id="filterRegion">
+    <option value="">Toutes les régions</option>
+  </select>
   <label class="check">
     <input type="checkbox" id="showEpuisees">
     Voir les épuisées
@@ -567,6 +570,15 @@ function renderSynthese() {
   content.innerHTML = html;
 }
 
+  function populateRegionFilter() {
+  const select = document.getElementById('filterRegion');
+  const valeurActuelle = select.value;
+  const regions = [...new Set(wines.map(w => w.region).filter(r => r && r.trim()))]
+    .sort((a, b) => a.localeCompare(b, 'fr'));
+  select.innerHTML = '<option value="">Toutes les régions</option>' +
+    regions.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+  if (regions.includes(valeurActuelle)) select.value = valeurActuelle;
+}
 function render() {
   if (currentView === 'synthese') {
     document.getElementById('subtitle').textContent = 'Synthèse par région';
@@ -575,14 +587,37 @@ function render() {
   }
 
   const content = document.getElementById('content');
+  populateRegionFilter();
   const filterCouleur = document.getElementById('filterCouleur').value;
+  const filterRegion = document.getElementById('filterRegion').value;
   const showEpuisees = document.getElementById('showEpuisees').checked;
 
-  let list = wines.filter(w => {
+ let list = wines.filter(w => {
     if (filterCouleur && w.couleur !== filterCouleur) return false;
+    if (filterRegion && (w.region || '') !== filterRegion) return false;
     if (!showEpuisees && w.quantite <= 0) return false;
     return true;
   });
+Zone 3 — l'écouteur d'événement (cherche filterCouleur').addEventListener).
+
+Cherche :
+
+javascript
+document.getElementById('filterCouleur').addEventListener('change', render);
+document.getElementById('showEpuisees').addEventListener('change', render);
+Remplace par :
+
+javascript
+document.getElementById('filterCouleur').addEventListener('change', render);
+document.getElementById('filterRegion').addEventListener('change', render);
+document.getElementById('showEpuisees').addEventListener('change', render);
+Comment ça marche ensuite : la liste des régions proposées dans le nouveau menu déroulant se construit automatiquement à partir des régions déjà saisies sur tes fiches — pas besoin de la mettre à jour à la main à chaque nouveau vin. Choisir une région filtre l'affichage à cette seule région (combinable avec le filtre couleur) ; "Toutes les régions" annule le filtre.
+
+Si tu préfères, je peux aussi simplement te régénérer le fichier complet avec ces trois zones déjà appliquées, comme la dernière fois — dis-moi ce qui t'arrange le mieux.
+
+
+
+
 
   document.getElementById('subtitle').textContent =
     wines.length === 0 ? 'Aucun vin enregistré' :
@@ -791,6 +826,7 @@ document.getElementById('btnSaveBulkPrices').addEventListener('click', () => {
 });
 
 document.getElementById('filterCouleur').addEventListener('change', render);
+document.getElementById('filterRegion').addEventListener('change', render);
 document.getElementById('showEpuisees').addEventListener('change', render);
 
 document.getElementById('btnExport').addEventListener('click', () => {
