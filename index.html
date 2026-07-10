@@ -210,6 +210,25 @@
   .field-row .field { flex: 1; }
   .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
   .modal-actions .btn { flex: 1; }
+  .modal-wide { max-width: 640px; }
+  .bulk-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  .bulk-table th {
+    text-align: left;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .bulk-table td {
+    padding: 5px 6px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+  }
+  .bulk-table td.bulk-nom { font-size: 0.88rem; }
+  .bulk-table td.bulk-nom .bulk-millesime { color: var(--ink-soft); font-size: 0.78rem; }
+  .bulk-table input[type="number"] { width: 90px; padding: 6px 8px; }
   textarea { resize: vertical; min-height: 60px; }
   .toast {
     position: fixed;
@@ -306,6 +325,7 @@
 <div class="backup-row">
   <button id="btnExport">⭳ Exporter une sauvegarde</button>
   <button id="btnImport">⭱ Importer une sauvegarde</button>
+  <button id="btnBulkPrices">✎ Prix en masse</button>
 </div>
 
 <div id="content"></div>
@@ -398,8 +418,27 @@
       <textarea id="fTastingNote" placeholder="quelques mots…"></textarea>
     </div>
     <div class="modal-actions">
+      <button class="btn btn-danger" id="btnCancelTasting">Annuler</button>
       <button class="btn btn-ghost" id="btnSkipTasting">Passer</button>
       <button class="btn btn-primary" id="btnSaveTasting">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal édition en masse des prix -->
+<div class="overlay" id="overlayBulkPrices">
+  <div class="modal modal-wide">
+    <h2>Modifier les prix en masse</h2>
+    <p style="font-size:0.85rem; color:var(--ink-soft); margin-top:-8px;">Prix d'achat et prix du marché, vin par vin. Laisser vide pour effacer une valeur.</p>
+    <table class="bulk-table">
+      <thead>
+        <tr><th>Vin</th><th>Prix d'achat (€)</th><th>Prix marché (€)</th></tr>
+      </thead>
+      <tbody id="bulkPricesBody"></tbody>
+    </table>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnCancelBulkPrices">Annuler</button>
+      <button class="btn btn-primary" id="btnSaveBulkPrices">Enregistrer tout</button>
     </div>
   </div>
 </div>
@@ -693,6 +732,10 @@ document.getElementById('btnSaveWine').addEventListener('click', () => {
 
 document.getElementById('btnSaveTasting').addEventListener('click', () => finalizeTasting(true));
 document.getElementById('btnSkipTasting').addEventListener('click', () => finalizeTasting(false));
+document.getElementById('btnCancelTasting').addEventListener('click', () => {
+  tastingWineId = null;
+  document.getElementById('overlayTasting').classList.remove('open');
+});
 
 function finalizeTasting(withNote) {
   const wine = wines.find(w => w.id === tastingWineId);
@@ -708,6 +751,44 @@ function finalizeTasting(withNote) {
   render();
   showToast('Bouteille enregistrée comme ouverte');
 }
+
+function openBulkPricesModal() {
+  const body = document.getElementById('bulkPricesBody');
+  const trié = [...wines].sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+  body.innerHTML = trié.map(w => `
+    <tr data-id="${w.id}">
+      <td class="bulk-nom">${escapeHtml(w.nom)}${w.millesime ? `<br><span class="bulk-millesime">${w.millesime}</span>` : ''}</td>
+      <td><input type="number" step="0.01" min="0" class="bulk-prix-achat" value="${w.prixAchat != null ? w.prixAchat : ''}"></td>
+      <td><input type="number" step="0.01" min="0" class="bulk-prix-marche" value="${w.prixMarche != null ? w.prixMarche : ''}"></td>
+    </tr>
+  `).join('');
+  document.getElementById('overlayBulkPrices').classList.add('open');
+}
+
+document.getElementById('btnBulkPrices').addEventListener('click', openBulkPricesModal);
+document.getElementById('btnCancelBulkPrices').addEventListener('click', () => {
+  document.getElementById('overlayBulkPrices').classList.remove('open');
+});
+document.getElementById('btnSaveBulkPrices').addEventListener('click', () => {
+  const rows = document.querySelectorAll('#bulkPricesBody tr');
+  let nbModifs = 0;
+  rows.forEach(row => {
+    const id = row.dataset.id;
+    const wine = wines.find(w => w.id === id);
+    if (!wine) return;
+    const achatVal = row.querySelector('.bulk-prix-achat').value;
+    const marcheVal = row.querySelector('.bulk-prix-marche').value;
+    const nouveauAchat = achatVal !== '' ? parseFloat(achatVal) : null;
+    const nouveauMarche = marcheVal !== '' ? parseFloat(marcheVal) : null;
+    if (nouveauAchat !== wine.prixAchat || nouveauMarche !== wine.prixMarche) nbModifs++;
+    wine.prixAchat = nouveauAchat;
+    wine.prixMarche = nouveauMarche;
+  });
+  saveWines();
+  document.getElementById('overlayBulkPrices').classList.remove('open');
+  render();
+  showToast(nbModifs > 0 ? `${nbModifs} vin(s) mis à jour` : 'Aucune modification');
+});
 
 document.getElementById('filterCouleur').addEventListener('change', render);
 document.getElementById('showEpuisees').addEventListener('change', render);
