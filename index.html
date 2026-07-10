@@ -570,7 +570,7 @@ function renderSynthese() {
   content.innerHTML = html;
 }
 
-  function populateRegionFilter() {
+function populateRegionFilter() {
   const select = document.getElementById('filterRegion');
   const valeurActuelle = select.value;
   const regions = [...new Set(wines.map(w => w.region).filter(r => r && r.trim()))]
@@ -579,6 +579,7 @@ function renderSynthese() {
     regions.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
   if (regions.includes(valeurActuelle)) select.value = valeurActuelle;
 }
+
 function render() {
   if (currentView === 'synthese') {
     document.getElementById('subtitle').textContent = 'Synthèse par région';
@@ -592,28 +593,12 @@ function render() {
   const filterRegion = document.getElementById('filterRegion').value;
   const showEpuisees = document.getElementById('showEpuisees').checked;
 
- let list = wines.filter(w => {
+  let list = wines.filter(w => {
     if (filterCouleur && w.couleur !== filterCouleur) return false;
     if (filterRegion && (w.region || '') !== filterRegion) return false;
     if (!showEpuisees && w.quantite <= 0) return false;
     return true;
   });
-
-document.getElementById('filterCouleur').addEventListener('change', render);
-document.getElementById('showEpuisees').addEventListener('change', render);
-Remplace par :
-
-javascript
-document.getElementById('filterCouleur').addEventListener('change', render);
-document.getElementById('filterRegion').addEventListener('change', render);
-document.getElementById('showEpuisees').addEventListener('change', render);
-Comment ça marche ensuite : la liste des régions proposées dans le nouveau menu déroulant se construit automatiquement à partir des régions déjà saisies sur tes fiches — pas besoin de la mettre à jour à la main à chaque nouveau vin. Choisir une région filtre l'affichage à cette seule région (combinable avec le filtre couleur) ; "Toutes les régions" annule le filtre.
-
-Si tu préfères, je peux aussi simplement te régénérer le fichier complet avec ces trois zones déjà appliquées, comme la dernière fois — dis-moi ce qui t'arrange le mieux.
-
-
-
-
 
   document.getElementById('subtitle').textContent =
     wines.length === 0 ? 'Aucun vin enregistré' :
