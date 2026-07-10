@@ -598,11 +598,7 @@ function render() {
     if (!showEpuisees && w.quantite <= 0) return false;
     return true;
   });
-Zone 3 — l'écouteur d'événement (cherche filterCouleur').addEventListener).
 
-Cherche :
-
-javascript
 document.getElementById('filterCouleur').addEventListener('change', render);
 document.getElementById('showEpuisees').addEventListener('change', render);
 Remplace par :
