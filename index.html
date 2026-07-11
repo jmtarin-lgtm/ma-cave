@@ -414,7 +414,12 @@
     </div>
     <div class="field">
       <label>Photo de l'étiquette (optionnel)</label>
-      <input type="file" accept="image/*" id="fPhotoInput">
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn btn-ghost" id="btnPhotoCamera" style="flex:1;">📷 Prendre une photo</button>
+        <button type="button" class="btn btn-ghost" id="btnPhotoGallery" style="flex:1;">🖼️ Galerie</button>
+      </div>
+      <input type="file" accept="image/*" capture="environment" id="fPhotoInputCamera" style="display:none;">
+      <input type="file" accept="image/*" id="fPhotoInputGallery" style="display:none;">
       <div class="photo-field-row" id="photoPreviewWrap" style="display:none;">
         <img id="photoPreview" class="photo-preview" alt="Aperçu étiquette">
         <span style="font-size:0.78rem; color:var(--ink-soft);">Reprendre une photo la remplacera.</span>
@@ -806,7 +811,8 @@ function openWineModal(wine) {
   document.getElementById('fFavori').checked = wine ? !!wine.favori : false;
 
   pendingPhoto = wine ? (wine.photo || null) : null;
-  document.getElementById('fPhotoInput').value = '';
+  document.getElementById('fPhotoInputCamera').value = '';
+  document.getElementById('fPhotoInputGallery').value = '';
   const preview = document.getElementById('photoPreview');
   const previewWrap = document.getElementById('photoPreviewWrap');
   if (pendingPhoto) {
@@ -820,7 +826,14 @@ function openWineModal(wine) {
   document.getElementById('overlayWine').classList.add('open');
 }
 
-document.getElementById('fPhotoInput').addEventListener('change', async (e) => {
+document.getElementById('btnPhotoCamera').addEventListener('click', () => {
+  document.getElementById('fPhotoInputCamera').click();
+});
+document.getElementById('btnPhotoGallery').addEventListener('click', () => {
+  document.getElementById('fPhotoInputGallery').click();
+});
+
+async function handlePhotoFile(e) {
   const file = e.target.files[0];
   if (!file) return;
   try {
@@ -833,7 +846,9 @@ document.getElementById('fPhotoInput').addEventListener('change', async (e) => {
     console.error(err);
     showToast('Photo illisible, réessaie');
   }
-});
+}
+document.getElementById('fPhotoInputCamera').addEventListener('change', handlePhotoFile);
+document.getElementById('fPhotoInputGallery').addEventListener('change', handlePhotoFile);
 
 document.getElementById('btnClosePhoto').addEventListener('click', () => {
   document.getElementById('overlayPhoto').classList.remove('open');
