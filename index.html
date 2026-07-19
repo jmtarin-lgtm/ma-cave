@@ -452,8 +452,12 @@
     </div>
     <div class="field">
       <label>Région d'origine</label>
-      <input type="text" id="fRegion" list="regionsList" placeholder="ex : Bourgogne (tape ou choisis dans la liste)">
-      <datalist id="regionsList"></datalist>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="fRegion" placeholder="ex : Bourgogne" style="flex:1;">
+        <select id="fRegionPicker" style="flex:0 0 auto; max-width:110px;">
+          <option value="">Choisir…</option>
+        </select>
+      </div>
     </div>
     <div class="field">
       <label>Cépage</label>
@@ -847,11 +851,12 @@ function populateRegionFilter() {
   if (regions.includes(valeurActuelle)) select.value = valeurActuelle;
 }
 
-function populateRegionDatalist() {
-  const datalist = document.getElementById('regionsList');
+function populateRegionPicker() {
+  const picker = document.getElementById('fRegionPicker');
   const regions = [...new Set(wines.map(w => w.region).filter(r => r && r.trim()))]
     .sort((a, b) => a.localeCompare(b, 'fr'));
-  datalist.innerHTML = regions.map(r => `<option value="${escapeHtml(r)}">`).join('');
+  picker.innerHTML = '<option value="">Choisir…</option>' +
+    regions.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
 }
 
 function render() {
@@ -1006,7 +1011,7 @@ function openWineModal(wine) {
   document.getElementById('fPrixAchat').value = wine ? wine.prixAchat || '' : '';
   document.getElementById('fCommentaire').value = wine ? wine.commentaire || '' : '';
   document.getElementById('fFavori').checked = wine ? !!wine.favori : false;
-  populateRegionDatalist();
+  populateRegionPicker();
 
   pendingPhoto = wine ? (wine.photo || null) : null;
   document.getElementById('fPhotoInputCamera').value = '';
@@ -1053,6 +1058,12 @@ document.getElementById('btnClosePhoto').addEventListener('click', () => {
 });
 
 document.getElementById('btnAdd').addEventListener('click', () => openWineModal(null));
+document.getElementById('fRegionPicker').addEventListener('change', (e) => {
+  if (e.target.value) {
+    document.getElementById('fRegion').value = e.target.value;
+  }
+  e.target.value = '';
+});
 document.getElementById('btnCancelWine').addEventListener('click', () => {
   document.getElementById('overlayWine').classList.remove('open');
 });
