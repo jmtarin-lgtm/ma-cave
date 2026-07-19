@@ -452,21 +452,8 @@
     </div>
     <div class="field">
       <label>Région d'origine</label>
-      <input type="text" id="fRegion" list="regionsList" placeholder="ex : Bourgogne">
-      <datalist id="regionsList">
-        <option value="Bourgogne">
-        <option value="Bordeaux">
-        <option value="Vallée du Rhône">
-        <option value="Val de Loire">
-        <option value="Alsace">
-        <option value="Provence">
-        <option value="Languedoc-Roussillon">
-        <option value="Champagne">
-        <option value="Jura">
-        <option value="Beaujolais">
-        <option value="Sud-Ouest">
-        <option value="Étranger">
-      </datalist>
+      <input type="text" id="fRegion" list="regionsList" placeholder="ex : Bourgogne (tape ou choisis dans la liste)">
+      <datalist id="regionsList"></datalist>
     </div>
     <div class="field">
       <label>Cépage</label>
@@ -499,15 +486,13 @@
         <input type="number" id="fQuantite" min="0" value="1">
       </div>
     </div>
-    <div class="field-row">
-      <div class="field">
-        <label>Prix d'achat (€)</label>
-        <input type="number" id="fPrixAchat" step="0.01" placeholder="optionnel">
-      </div>
-      <div class="field">
-        <label>Prix du marché (€)</label>
-        <input type="number" id="fPrixMarche" step="0.01" placeholder="optionnel">
-      </div>
+    <div class="field">
+      <label>Prix d'achat (€)</label>
+      <input type="number" id="fPrixAchat" step="0.01" placeholder="optionnel">
+    </div>
+    <div class="field">
+      <label>Commentaire (optionnel)</label>
+      <textarea id="fCommentaire" placeholder="ex : à boire avant 2027, coup de cœur du caviste…"></textarea>
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="btnCancelWine">Annuler</button>
@@ -521,6 +506,10 @@
   <div class="modal">
     <h2>Bouteille ouverte</h2>
     <p style="font-size:0.85rem; color:var(--ink-soft); margin-top:-8px;" id="tastingWineName"></p>
+    <div class="field favori-row">
+      <input type="checkbox" id="fTastingFavori">
+      <label for="fTastingFavori">⭐ Marquer comme favori</label>
+    </div>
     <div class="field">
       <label>Note de dégustation (facultatif)</label>
       <textarea id="fTastingNote" placeholder="quelques mots…"></textarea>
@@ -547,10 +536,10 @@
 <div class="overlay" id="overlayBulkPrices">
   <div class="modal modal-wide">
     <h2>Modifier les prix en masse</h2>
-    <p style="font-size:0.85rem; color:var(--ink-soft); margin-top:-8px;">Prix d'achat et prix du marché, vin par vin. Laisser vide pour effacer une valeur.</p>
+    <p style="font-size:0.85rem; color:var(--ink-soft); margin-top:-8px;">Prix d'achat, vin par vin. Laisser vide pour effacer une valeur.</p>
     <table class="bulk-table">
       <thead>
-        <tr><th>Vin</th><th>Prix d'achat (€)</th><th>Prix marché (€)</th></tr>
+        <tr><th>Vin</th><th>Prix d'achat (€)</th></tr>
       </thead>
       <tbody id="bulkPricesBody"></tbody>
     </table>
@@ -703,7 +692,6 @@ document.getElementById('tabSynthese').addEventListener('click', () => {
 });
 
 function valeurUnitaire(w) {
-  if (w.prixMarche) return w.prixMarche;
   if (w.prixAchat) return w.prixAchat;
   return 0;
 }
@@ -859,6 +847,13 @@ function populateRegionFilter() {
   if (regions.includes(valeurActuelle)) select.value = valeurActuelle;
 }
 
+function populateRegionDatalist() {
+  const datalist = document.getElementById('regionsList');
+  const regions = [...new Set(wines.map(w => w.region).filter(r => r && r.trim()))]
+    .sort((a, b) => a.localeCompare(b, 'fr'));
+  datalist.innerHTML = regions.map(r => `<option value="${escapeHtml(r)}">`).join('');
+}
+
 function render() {
   if (currentView === 'synthese') {
     document.getElementById('subtitle').textContent = syntheseSubView === 'journal' ? 'Journal de dégustation' : 'Synthèse par région';
@@ -878,7 +873,7 @@ function render() {
   if (searchTextRaw) {
     const q = normalize(searchTextRaw);
     list = wines.filter(w => {
-      const champs = [w.nom, w.region, w.cepage, w.offertPar].filter(Boolean).map(normalize);
+      const champs = [w.nom, w.region, w.cepage, w.offertPar, w.commentaire].filter(Boolean).map(normalize);
       return champs.some(c => c.includes(q));
     });
   } else if (filterFavorisActif) {
@@ -953,8 +948,8 @@ function renderCard(w) {
       <div class="card-details">
         ${w.offertPar ? `<div><span class="label">Offert par</span>${escapeHtml(w.offertPar)}</div>` : `<div><span class="label">Origine</span>Achetée</div>`}
         ${w.prixAchat ? `<div><span class="label">Prix d'achat</span>${w.prixAchat} €</div>` : ''}
-        ${w.prixMarche ? `<div><span class="label">Prix du marché</span>${w.prixMarche} €</div>` : ''}
       </div>
+      ${w.commentaire ? `<p class="card-sub" style="margin-top:8px; font-style:italic;">💬 ${escapeHtml(w.commentaire)}</p>` : ''}
       <div class="card-actions">
         <button class="btn btn-primary" data-action="open" data-id="${w.id}" ${epuisee ? 'disabled' : ''}>J'ai ouvert une bouteille</button>
         <button class="btn btn-ghost" data-action="edit" data-id="${w.id}">Modifier</button>
@@ -984,6 +979,7 @@ function handleCardAction(e) {
     tastingWineId = id;
     document.getElementById('tastingWineName').textContent = wine.nom;
     document.getElementById('fTastingNote').value = '';
+    document.getElementById('fTastingFavori').checked = !!wine.favori;
     document.getElementById('overlayTasting').classList.add('open');
   } else if (action === 'edit') {
     openWineModal(wine);
@@ -1008,8 +1004,9 @@ function openWineModal(wine) {
   document.getElementById('fOffert').value = wine ? wine.offertPar || '' : '';
   document.getElementById('fQuantite').value = wine ? wine.quantite : 1;
   document.getElementById('fPrixAchat').value = wine ? wine.prixAchat || '' : '';
-  document.getElementById('fPrixMarche').value = wine ? wine.prixMarche || '' : '';
+  document.getElementById('fCommentaire').value = wine ? wine.commentaire || '' : '';
   document.getElementById('fFavori').checked = wine ? !!wine.favori : false;
+  populateRegionDatalist();
 
   pendingPhoto = wine ? (wine.photo || null) : null;
   document.getElementById('fPhotoInputCamera').value = '';
@@ -1073,7 +1070,7 @@ document.getElementById('btnSaveWine').addEventListener('click', () => {
     offertPar: document.getElementById('fOffert').value.trim(),
     quantite: Math.max(0, parseInt(document.getElementById('fQuantite').value) || 0),
     prixAchat: document.getElementById('fPrixAchat').value ? parseFloat(document.getElementById('fPrixAchat').value) : null,
-    prixMarche: document.getElementById('fPrixMarche').value ? parseFloat(document.getElementById('fPrixMarche').value) : null,
+    commentaire: document.getElementById('fCommentaire').value.trim(),
     favori: document.getElementById('fFavori').checked,
     photo: pendingPhoto,
   };
@@ -1102,6 +1099,7 @@ function finalizeTasting(withNote) {
   const wine = wines.find(w => w.id === tastingWineId);
   if (!wine) return;
   wine.quantite = Math.max(0, wine.quantite - 1);
+  wine.favori = document.getElementById('fTastingFavori').checked;
   wine.historique = wine.historique || [];
   wine.historique.push({
     date: new Date().toISOString(),
@@ -1120,7 +1118,6 @@ function openBulkPricesModal() {
     <tr data-id="${w.id}">
       <td class="bulk-nom">${escapeHtml(w.nom)}${w.millesime ? `<br><span class="bulk-millesime">${w.millesime}</span>` : ''}</td>
       <td><input type="number" step="0.01" min="0" class="bulk-prix-achat" value="${w.prixAchat != null ? w.prixAchat : ''}"></td>
-      <td><input type="number" step="0.01" min="0" class="bulk-prix-marche" value="${w.prixMarche != null ? w.prixMarche : ''}"></td>
     </tr>
   `).join('');
   document.getElementById('overlayBulkPrices').classList.add('open');
@@ -1138,12 +1135,9 @@ document.getElementById('btnSaveBulkPrices').addEventListener('click', () => {
     const wine = wines.find(w => w.id === id);
     if (!wine) return;
     const achatVal = row.querySelector('.bulk-prix-achat').value;
-    const marcheVal = row.querySelector('.bulk-prix-marche').value;
     const nouveauAchat = achatVal !== '' ? parseFloat(achatVal) : null;
-    const nouveauMarche = marcheVal !== '' ? parseFloat(marcheVal) : null;
-    if (nouveauAchat !== wine.prixAchat || nouveauMarche !== wine.prixMarche) nbModifs++;
+    if (nouveauAchat !== wine.prixAchat) nbModifs++;
     wine.prixAchat = nouveauAchat;
-    wine.prixMarche = nouveauMarche;
   });
   saveWines();
   document.getElementById('overlayBulkPrices').classList.remove('open');
@@ -1237,7 +1231,6 @@ if (wines.length === 0) {
     offertPar: 'Olivier',
     quantite: 1,
     prixAchat: null,
-    prixMarche: 40,
     historique: []
   });
   wines.push({
@@ -1250,7 +1243,6 @@ if (wines.length === 0) {
     offertPar: 'Thierry',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1263,7 +1255,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1276,7 +1267,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 6,
     prixAchat: 19,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1289,7 +1279,6 @@ if (wines.length === 0) {
     offertPar: 'Patrick et Christelle Point',
     quantite: 3,
     prixAchat: 13,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1302,7 +1291,6 @@ if (wines.length === 0) {
     offertPar: 'Elsa et Damien',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1315,7 +1303,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1328,7 +1315,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1341,7 +1327,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 2,
     prixAchat: 15,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1354,7 +1339,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1367,7 +1351,6 @@ if (wines.length === 0) {
     offertPar: 'Olivier',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1380,7 +1363,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1393,7 +1375,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 5,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1406,7 +1387,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: 8,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1419,7 +1399,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1432,7 +1411,6 @@ if (wines.length === 0) {
     offertPar: 'Ludo',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1445,7 +1423,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1458,7 +1435,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: 12,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1471,7 +1447,6 @@ if (wines.length === 0) {
     offertPar: 'Laurent et Anaïs',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1484,7 +1459,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1497,7 +1471,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 3,
     prixAchat: 16,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1510,7 +1483,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1523,7 +1495,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 10,
     prixAchat: 30,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1536,7 +1507,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 2,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1549,7 +1519,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1562,7 +1531,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: 7.5,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1575,7 +1543,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1588,7 +1555,6 @@ if (wines.length === 0) {
     offertPar: 'Elsa et Damien (cadeau de mariage)',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1601,7 +1567,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1614,7 +1579,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1627,7 +1591,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1640,7 +1603,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1653,7 +1615,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 2,
     prixAchat: 12,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1666,7 +1627,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 6,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1679,7 +1639,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 2,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1692,7 +1651,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 4,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1705,7 +1663,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1718,7 +1675,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1731,7 +1687,6 @@ if (wines.length === 0) {
     offertPar: 'Achetée avec Damien',
     quantite: 2,
     prixAchat: 10,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1744,7 +1699,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 2,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1757,7 +1711,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 4,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1770,7 +1723,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1783,7 +1735,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1796,7 +1747,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1809,7 +1759,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1822,7 +1771,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 3,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1835,7 +1783,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1848,7 +1795,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   wines.push({
@@ -1861,7 +1807,6 @@ if (wines.length === 0) {
     offertPar: '',
     quantite: 1,
     prixAchat: null,
-    prixMarche: null,
     historique: []
   });
   saveWines();
